@@ -27,9 +27,9 @@ public class CreateWarehouseUseCase implements CreateWarehouseOperation {
   @Override
   public void create(Warehouse warehouse) {
     LOGGER.infof("Creating warehouse with business unit code '%s' at location '%s'",
-        warehouse.businessUnitCode, warehouse.location);
+        warehouse.getBusinessUnitCode(), warehouse.getLocation());
     warehouseValidator.validate(warehouse, false);
     warehouseStore.create(warehouse);
-    LOGGER.infof("Warehouse '%s' created successfully", warehouse.businessUnitCode);
+    LOGGER.infof("Warehouse '%s' created successfully", warehouse.getBusinessUnitCode());
   }
 }

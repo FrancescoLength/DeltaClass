@@ -35,10 +35,10 @@ public class WarehouseBusinessValidatorTest {
     @BeforeEach
     void setUp() {
         warehouse = new Warehouse();
-        warehouse.businessUnitCode = "BU001";
-        warehouse.location = "LOC1";
-        warehouse.capacity = 100;
-        warehouse.stock = 50;
+        warehouse.setBusinessUnitCode("BU001");
+        warehouse.setLocation("LOC1");
+        warehouse.setCapacity(100);
+        warehouse.setStock(50);
 
         location = new Location("LOC1", 5, 200);
     }
@@ -84,8 +84,8 @@ public class WarehouseBusinessValidatorTest {
 
     @Test
     void testValidate_StockExceedsCapacity() {
-        warehouse.stock = 150;
-        warehouse.capacity = 100;
+        warehouse.setStock(150);
+        warehouse.setCapacity(100);
         when(warehouseStore.findByBusinessUnitCode("BU001")).thenReturn(null);
         when(locationResolver.resolveByIdentifier("LOC1")).thenReturn(location);
 
@@ -96,7 +96,7 @@ public class WarehouseBusinessValidatorTest {
 
     @Test
     void testValidate_CapacityExceedsLocationLimit() {
-        warehouse.capacity = 300;
+        warehouse.setCapacity(300);
         when(warehouseStore.findByBusinessUnitCode("BU001")).thenReturn(null);
         when(locationResolver.resolveByIdentifier("LOC1")).thenReturn(location);
 
@@ -108,8 +108,8 @@ public class WarehouseBusinessValidatorTest {
     @Test
     void testValidate_Replacement_CapacityAccommodationFailure() {
         Warehouse existing = new Warehouse();
-        existing.businessUnitCode = "BU001";
-        existing.stock = 120; // more than new capacity 100
+        existing.setBusinessUnitCode("BU001");
+        existing.setStock(120); // more than new capacity 100
 
         when(warehouseStore.findByBusinessUnitCode("BU001")).thenReturn(existing);
 
@@ -121,11 +121,11 @@ public class WarehouseBusinessValidatorTest {
     @Test
     void testValidate_Replacement_StockMatchingFailure() {
         Warehouse existing = new Warehouse();
-        existing.businessUnitCode = "BU001";
-        existing.stock = 50;
+        existing.setBusinessUnitCode("BU001");
+        existing.setStock(50);
 
-        warehouse.stock = 60; // Doesn't match
-        warehouse.capacity = 100;
+        warehouse.setStock(60); // Doesn't match
+        warehouse.setCapacity(100);
 
         when(warehouseStore.findByBusinessUnitCode("BU001")).thenReturn(existing);
 

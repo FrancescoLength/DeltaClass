@@ -23,14 +23,14 @@ public class ArchiveWarehouseUseCase implements ArchiveWarehouseOperation {
 
   @Override
   public void archive(Warehouse warehouse) {
-    LOGGER.infof("Archiving warehouse with business unit code '%s'", warehouse.businessUnitCode);
-    Warehouse existing = warehouseStore.findByBusinessUnitCode(warehouse.businessUnitCode);
+    LOGGER.infof("Archiving warehouse with business unit code '%s'", warehouse.getBusinessUnitCode());
+    Warehouse existing = warehouseStore.findByBusinessUnitCode(warehouse.getBusinessUnitCode());
     if (existing != null) {
-      existing.archivedAt = java.time.LocalDateTime.now();
+      existing.setArchivedAt(java.time.ZonedDateTime.now());
       warehouseStore.update(existing);
-      LOGGER.infof("Warehouse '%s' archived successfully", warehouse.businessUnitCode);
+      LOGGER.infof("Warehouse '%s' archived successfully", warehouse.getBusinessUnitCode());
     } else {
-      LOGGER.warnf("Warehouse '%s' not found for archiving", warehouse.businessUnitCode);
+      LOGGER.warnf("Warehouse '%s' not found for archiving", warehouse.getBusinessUnitCode());
     }
   }
 }

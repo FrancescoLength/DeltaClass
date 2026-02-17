@@ -1,5 +1,10 @@
 package com.fulfilment.application.monolith.warehouses.domain.validation;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
+
 import com.fulfilment.application.monolith.warehouses.domain.models.Location;
 import com.fulfilment.application.monolith.warehouses.domain.models.Warehouse;
 import com.fulfilment.application.monolith.warehouses.domain.ports.LocationResolver;
@@ -7,14 +12,12 @@ import com.fulfilment.application.monolith.warehouses.domain.ports.WarehouseStor
 import jakarta.validation.ValidationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
-
+@ExtendWith(MockitoExtension.class)
 public class WarehouseBusinessValidatorTest {
 
     @Mock
@@ -26,91 +29,108 @@ public class WarehouseBusinessValidatorTest {
     @InjectMocks
     WarehouseBusinessValidator validator;
 
+    private Warehouse warehouse;
+    private Location location;
+
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        warehouse = new Warehouse();
+        warehouse.setBusinessUnitCode("BU001");
+        warehouse.setLocation("LOC1");
+        warehouse.setCapacity(100);
+        warehouse.setStock(50);
+
+        location = new Location("LOC1", 5, 200);
     }
 
     @Test
-    void testValidateReplacementCapacitySuccess() {
+    void testValidate_Success() {
+        when(warehouseStore.findByBusinessUnitCode("BU001")).thenReturn(null);
+        when(locationResolver.resolveByIdentifier("LOC1")).thenReturn(location);
+        when(warehouseStore.countByLocation("LOC1")).thenReturn(2L);
+
+        assertDoesNotThrow(() -> validator.validate(warehouse, false));
+    }
+
+    @Test
+    void testValidate_AlreadyExists() {
+        when(warehouseStore.findByBusinessUnitCode("BU001")).thenReturn(new Warehouse());
+
+        ValidationException exception = assertThrows(ValidationException.class,
+                () -> validator.validate(warehouse, false));
+        assertEquals("Business Unit Code already exists: BU001", exception.getMessage());
+    }
+
+    @Test
+    void testValidate_InvalidLocation() {
+        when(warehouseStore.findByBusinessUnitCode("BU001")).thenReturn(null);
+        when(locationResolver.resolveByIdentifier("LOC1")).thenReturn(null);
+
+        ValidationException exception = assertThrows(ValidationException.class,
+                () -> validator.validate(warehouse, false));
+        assertEquals("Invalid Location: LOC1", exception.getMessage());
+    }
+
+    @Test
+    void testValidate_MaxWarehouses() {
+        when(warehouseStore.findByBusinessUnitCode("BU001")).thenReturn(null);
+        when(locationResolver.resolveByIdentifier("LOC1")).thenReturn(location);
+        when(warehouseStore.countByLocation("LOC1")).thenReturn(5L);
+
+        ValidationException exception = assertThrows(ValidationException.class,
+                () -> validator.validate(warehouse, false));
+        assertEquals("Maximum number of warehouses reached for location: LOC1", exception.getMessage());
+    }
+
+    @Test
+    void testValidate_StockExceedsCapacity() {
+        warehouse.setStock(150);
+        warehouse.setCapacity(100);
+        when(warehouseStore.findByBusinessUnitCode("BU001")).thenReturn(null);
+        when(locationResolver.resolveByIdentifier("LOC1")).thenReturn(location);
+
+        ValidationException exception = assertThrows(ValidationException.class,
+                () -> validator.validate(warehouse, false));
+        assertEquals("Stock cannot exceed Capacity. Stock: 150, Capacity: 100", exception.getMessage());
+    }
+
+    @Test
+    void testValidate_CapacityExceedsLocationLimit() {
+        warehouse.setCapacity(300);
+        when(warehouseStore.findByBusinessUnitCode("BU001")).thenReturn(null);
+        when(locationResolver.resolveByIdentifier("LOC1")).thenReturn(location);
+
+        ValidationException exception = assertThrows(ValidationException.class,
+                () -> validator.validate(warehouse, false));
+        assertEquals("Warehouse capacity exceeds location limit. Capacity: 300, Max: 200", exception.getMessage());
+    }
+
+    @Test
+    void testValidate_Replacement_CapacityAccommodationFailure() {
         Warehouse existing = new Warehouse();
-        existing.businessUnitCode = "WH-1";
-        existing.stock = 50;
-        existing.capacity = 100;
-        existing.location = "LOC-1";
+        existing.setBusinessUnitCode("BU001");
+        existing.setStock(120); // more than new capacity 100
 
-        Warehouse replacement = new Warehouse();
-        replacement.businessUnitCode = "WH-1";
-        replacement.capacity = 60; // > 50
-        replacement.stock = 50;
-        replacement.location = "LOC-1";
+        when(warehouseStore.findByBusinessUnitCode("BU001")).thenReturn(existing);
 
-        Location location = new Location("LOC-1", 5, 200);
-
-        when(warehouseStore.findByBusinessUnitCode("WH-1")).thenReturn(existing);
-        when(locationResolver.resolveByIdentifier("LOC-1")).thenReturn(location);
-
-        assertDoesNotThrow(() -> validator.validate(replacement, true));
+        ValidationException exception = assertThrows(ValidationException.class,
+                () -> validator.validate(warehouse, true));
+        assertEquals("New capacity (100) cannot be less than current stock (120)", exception.getMessage());
     }
 
     @Test
-    void testValidateReplacementCapacityFailure() {
+    void testValidate_Replacement_StockMatchingFailure() {
         Warehouse existing = new Warehouse();
-        existing.businessUnitCode = "WH-1";
-        existing.stock = 80;
-        existing.capacity = 100;
-        existing.location = "LOC-1";
+        existing.setBusinessUnitCode("BU001");
+        existing.setStock(50);
 
-        Warehouse replacement = new Warehouse();
-        replacement.businessUnitCode = "WH-1";
-        replacement.capacity = 50; // < 80
-        replacement.stock = 50;
-        replacement.location = "LOC-1";
+        warehouse.setStock(60); // Doesn't match
+        warehouse.setCapacity(100);
 
-        Location location = new Location("LOC-1", 5, 200);
+        when(warehouseStore.findByBusinessUnitCode("BU001")).thenReturn(existing);
 
-        when(warehouseStore.findByBusinessUnitCode("WH-1")).thenReturn(existing);
-        when(locationResolver.resolveByIdentifier("LOC-1")).thenReturn(location);
-
-        assertThrows(ValidationException.class, () -> validator.validate(replacement, true));
-    }
-
-    @Test
-    void testValidateReplacementStockFailure() {
-        Warehouse existing = new Warehouse();
-        existing.businessUnitCode = "WH-1";
-        existing.stock = 80;
-        existing.capacity = 100;
-        existing.location = "LOC-1";
-
-        Warehouse replacement = new Warehouse();
-        replacement.businessUnitCode = "WH-1";
-        replacement.capacity = 100;
-        replacement.stock = 50; // < 80, mismatch
-        replacement.location = "LOC-1";
-
-        Location location = new Location("LOC-1", 5, 200);
-
-        when(warehouseStore.findByBusinessUnitCode("WH-1")).thenReturn(existing);
-        when(locationResolver.resolveByIdentifier("LOC-1")).thenReturn(location);
-
-        assertThrows(ValidationException.class, () -> validator.validate(replacement, true));
-    }
-
-    @Test
-    void testValidateMaxWarehousesPerLocationFailure() {
-        Warehouse warehouse = new Warehouse();
-        warehouse.businessUnitCode = "WH-NEW";
-        warehouse.location = "LOC-1";
-        warehouse.capacity = 100;
-        warehouse.stock = 0;
-
-        Location location = new Location("LOC-1", 2, 500);
-
-        when(warehouseStore.findByBusinessUnitCode("WH-NEW")).thenReturn(null);
-        when(locationResolver.resolveByIdentifier("LOC-1")).thenReturn(location);
-        when(warehouseStore.countByLocation("LOC-1")).thenReturn(2L);
-
-        assertThrows(ValidationException.class, () -> validator.validate(warehouse, false));
+        ValidationException exception = assertThrows(ValidationException.class,
+                () -> validator.validate(warehouse, true));
+        assertEquals("Stock of the new warehouse (60) must match the existing stock (50)", exception.getMessage());
     }
 }

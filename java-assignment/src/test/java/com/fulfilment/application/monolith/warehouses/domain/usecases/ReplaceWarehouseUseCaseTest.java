@@ -33,10 +33,10 @@ public class ReplaceWarehouseUseCaseTest {
     @BeforeEach
     void setUp() {
         newWarehouse = new Warehouse();
-        newWarehouse.businessUnitCode = "BU-EXISTING";
-        newWarehouse.location = "ZWOLLE-001";
-        newWarehouse.capacity = 120;
-        newWarehouse.stock = 50;
+        newWarehouse.setBusinessUnitCode("BU-EXISTING");
+        newWarehouse.setLocation("ZWOLLE-001");
+        newWarehouse.setCapacity(120);
+        newWarehouse.setStock(50);
     }
 
     @Test

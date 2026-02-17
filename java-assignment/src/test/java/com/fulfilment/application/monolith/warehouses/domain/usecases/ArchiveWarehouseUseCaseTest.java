@@ -27,22 +27,22 @@ public class ArchiveWarehouseUseCaseTest {
     void testArchive_Success_SetsArchivedAtAndUpdates() {
         // given
         Warehouse existing = new Warehouse();
-        existing.businessUnitCode = "BU-001";
-        existing.location = "ZWOLLE-001";
-        existing.capacity = 100;
-        existing.stock = 50;
+        existing.setBusinessUnitCode("BU-001");
+        existing.setLocation("ZWOLLE-001");
+        existing.setCapacity(100);
+        existing.setStock(50);
 
         when(warehouseStore.findByBusinessUnitCode("BU-001")).thenReturn(existing);
 
         Warehouse input = new Warehouse();
-        input.businessUnitCode = "BU-001";
+        input.setBusinessUnitCode("BU-001");
 
         // when
         useCase.archive(input);
 
         // then - archivedAt is set and update is called
         verify(warehouseStore).update(argThat(w -> {
-            assertNotNull(w.archivedAt, "archivedAt should be set");
+            assertNotNull(w.getArchivedAt(), "archivedAt should be set");
             return true;
         }));
     }
@@ -53,7 +53,7 @@ public class ArchiveWarehouseUseCaseTest {
         when(warehouseStore.findByBusinessUnitCode("NONEXISTENT")).thenReturn(null);
 
         Warehouse input = new Warehouse();
-        input.businessUnitCode = "NONEXISTENT";
+        input.setBusinessUnitCode("NONEXISTENT");
 
         // when
         useCase.archive(input);

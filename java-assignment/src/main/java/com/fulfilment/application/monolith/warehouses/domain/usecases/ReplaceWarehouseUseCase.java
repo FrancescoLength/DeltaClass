@@ -27,9 +27,9 @@ public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
 
   @Override
   public void replace(Warehouse warehouse) {
-    LOGGER.infof("Replacing warehouse with business unit code '%s'", warehouse.businessUnitCode);
+    LOGGER.infof("Replacing warehouse with business unit code '%s'", warehouse.getBusinessUnitCode());
     warehouseValidator.validate(warehouse, true);
     warehouseStore.update(warehouse);
-    LOGGER.infof("Warehouse '%s' replaced successfully", warehouse.businessUnitCode);
+    LOGGER.infof("Warehouse '%s' replaced successfully", warehouse.getBusinessUnitCode());
   }
 }

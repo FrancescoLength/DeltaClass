@@ -73,20 +73,20 @@ public class WarehouseResourceImpl implements WarehouseResource {
 
   private Warehouse toApi(com.fulfilment.application.monolith.warehouses.domain.models.Warehouse domain) {
     Warehouse api = new Warehouse();
-    api.setId(domain.businessUnitCode);
-    api.setBusinessUnitCode(domain.businessUnitCode);
-    api.setLocation(domain.location);
-    api.setCapacity(domain.capacity);
-    api.setStock(domain.stock);
+    api.setId(domain.getBusinessUnitCode());
+    api.setBusinessUnitCode(domain.getBusinessUnitCode());
+    api.setLocation(domain.getLocation());
+    api.setCapacity(domain.getCapacity());
+    api.setStock(domain.getStock());
     return api;
   }
 
   private com.fulfilment.application.monolith.warehouses.domain.models.Warehouse fromApi(Warehouse api) {
     com.fulfilment.application.monolith.warehouses.domain.models.Warehouse domain = new com.fulfilment.application.monolith.warehouses.domain.models.Warehouse();
-    domain.businessUnitCode = api.getBusinessUnitCode() != null ? api.getBusinessUnitCode() : api.getId();
-    domain.location = api.getLocation();
-    domain.capacity = api.getCapacity();
-    domain.stock = api.getStock();
+    domain.setBusinessUnitCode(api.getBusinessUnitCode() != null ? api.getBusinessUnitCode() : api.getId());
+    domain.setLocation(api.getLocation());
+    domain.setCapacity(api.getCapacity());
+    domain.setStock(api.getStock());
     return domain;
   }
 }

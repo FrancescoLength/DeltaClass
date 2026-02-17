@@ -13,8 +13,11 @@ import java.time.LocalDateTime;
 @Cacheable
 public class DbWarehouse {
 
-  @Id @GeneratedValue public Long id;
+  @Id
+  @GeneratedValue
+  public Long id;
 
+  @jakarta.persistence.Column(unique = true)
   public String businessUnitCode;
 
   public String location;
@@ -27,16 +30,21 @@ public class DbWarehouse {
 
   public LocalDateTime archivedAt;
 
-  public DbWarehouse() {}
+  public DbWarehouse() {
+  }
 
   public Warehouse toWarehouse() {
     var warehouse = new Warehouse();
-    warehouse.businessUnitCode = this.businessUnitCode;
-    warehouse.location = this.location;
-    warehouse.capacity = this.capacity;
-    warehouse.stock = this.stock;
-    warehouse.createdAt = this.createdAt;
-    warehouse.archivedAt = this.archivedAt;
+    warehouse.setBusinessUnitCode(this.businessUnitCode);
+    warehouse.setLocation(this.location);
+    warehouse.setCapacity(this.capacity);
+    warehouse.setStock(this.stock);
+    if (this.createdAt != null) {
+      warehouse.setCreationAt(this.createdAt.atZone(java.time.ZoneId.systemDefault()));
+    }
+    if (this.archivedAt != null) {
+      warehouse.setArchivedAt(this.archivedAt.atZone(java.time.ZoneId.systemDefault()));
+    }
     return warehouse;
   }
 }
