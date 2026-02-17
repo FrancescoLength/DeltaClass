@@ -20,10 +20,24 @@ public class WarehouseBusinessValidator implements WarehouseValidator {
     @Override
     public void validate(Warehouse warehouse, boolean isReplacement) {
         // 1. Business Unit Code Verification
+        Warehouse existing = warehouseStore.findByBusinessUnitCode(warehouse.businessUnitCode);
         if (!isReplacement) {
-            Warehouse existing = warehouseStore.findByBusinessUnitCode(warehouse.businessUnitCode);
             if (existing != null) {
                 throw new ValidationException("Business Unit Code already exists: " + warehouse.businessUnitCode);
+            }
+        } else {
+            if (existing == null) {
+                throw new ValidationException("Warehouse to replace not found: " + warehouse.businessUnitCode);
+            }
+            // If replacement, ensure new capacity can still hold current stock
+            if (warehouse.capacity < existing.stock) {
+                throw new ValidationException("New capacity (" + warehouse.capacity
+                        + ") cannot be less than current stock (" + existing.stock + ")");
+            }
+            // Constraint: Stock of new warehouse must match the previous one
+            if (warehouse.stock != existing.stock) {
+                throw new ValidationException("Stock of the new warehouse (" + warehouse.stock
+                        + ") must match the existing stock (" + existing.stock + ")");
             }
         }
 
@@ -34,14 +48,9 @@ public class WarehouseBusinessValidator implements WarehouseValidator {
         }
 
         // 3. Warehouse Creation Feasibility (Max warehouses per location)
-        // If replacement, we assume we take the slot of the old one, so we don't
-        // increment.
-        // But if location changes during replacement (unlikely but possible?), we
-        // should check.
-        // Assuming replacement is for the SAME location or we need to check target
-        // location.
-        // If it's a new warehouse:
-        if (!isReplacement) {
+        // If it's a new warehouse OR a replacement that changes location:
+        boolean locationChanged = isReplacement && existing != null && !existing.location.equals(warehouse.location);
+        if (!isReplacement || locationChanged) {
             long currentCount = warehouseStore.countByLocation(warehouse.location);
             if (currentCount >= location.maxNumberOfWarehouses) {
                 throw new ValidationException(

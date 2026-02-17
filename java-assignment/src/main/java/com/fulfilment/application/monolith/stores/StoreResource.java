@@ -30,17 +30,20 @@ public class StoreResource {
   @Inject
   jakarta.enterprise.event.Event<StoreLegacyUpdateEvent> legacyStoreUpdateEvent;
 
+  @Inject
+  StoreRepository storeRepository;
+
   private static final Logger LOGGER = Logger.getLogger(StoreResource.class.getName());
 
   @GET
   public List<Store> get() {
-    return Store.listAll(Sort.by("name"));
+    return storeRepository.listAll(Sort.by("name"));
   }
 
   @GET
   @Path("{id}")
   public Store getSingle(Long id) {
-    Store entity = Store.findById(id);
+    Store entity = storeRepository.findById(id);
     if (entity == null) {
       throw new WebApplicationException("Store with id of " + id + " does not exist.", 404);
     }
@@ -54,7 +57,7 @@ public class StoreResource {
       throw new WebApplicationException("Id was invalidly set on request.", 422);
     }
 
-    store.persist();
+    storeRepository.persist(store);
 
     legacyStoreUpdateEvent.fire(new StoreLegacyUpdateEvent(store, true));
 
@@ -69,7 +72,7 @@ public class StoreResource {
       throw new WebApplicationException("Store Name was not set on request.", 422);
     }
 
-    Store entity = Store.findById(id);
+    Store entity = storeRepository.findById(id);
 
     if (entity == null) {
       throw new WebApplicationException("Store with id of " + id + " does not exist.", 404);
@@ -91,7 +94,7 @@ public class StoreResource {
       throw new WebApplicationException("Store Name was not set on request.", 422);
     }
 
-    Store entity = Store.findById(id);
+    Store entity = storeRepository.findById(id);
 
     if (entity == null) {
       throw new WebApplicationException("Store with id of " + id + " does not exist.", 404);
@@ -114,11 +117,11 @@ public class StoreResource {
   @Path("{id}")
   @Transactional
   public Response delete(Long id) {
-    Store entity = Store.findById(id);
+    Store entity = storeRepository.findById(id);
     if (entity == null) {
       throw new WebApplicationException("Store with id of " + id + " does not exist.", 404);
     }
-    entity.delete();
+    storeRepository.delete(entity);
     return Response.status(204).build();
   }
 
@@ -135,6 +138,8 @@ public class StoreResource {
       int code = 500;
       if (exception instanceof WebApplicationException) {
         code = ((WebApplicationException) exception).getResponse().getStatus();
+      } else if (exception instanceof jakarta.validation.ValidationException) {
+        code = 400;
       }
 
       ObjectNode exceptionJson = objectMapper.createObjectNode();

@@ -5,9 +5,12 @@ import com.fulfilment.application.monolith.warehouses.domain.ports.ReplaceWareho
 import com.fulfilment.application.monolith.warehouses.domain.ports.WarehouseStore;
 import com.fulfilment.application.monolith.warehouses.domain.validation.WarehouseValidator;
 import jakarta.enterprise.context.ApplicationScoped;
+import org.jboss.logging.Logger;
 
 @ApplicationScoped
 public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
+
+  private static final Logger LOGGER = Logger.getLogger(ReplaceWarehouseUseCase.class);
 
   private final WarehouseStore warehouseStore;
   private final WarehouseValidator warehouseValidator;
@@ -18,9 +21,10 @@ public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
   }
 
   @Override
-  public void replace(Warehouse newWarehouse) {
-    // We assume the caller has set the Business Unit Code correctly on newWarehouse
-    warehouseValidator.validate(newWarehouse, true);
-    warehouseStore.update(newWarehouse);
+  public void replace(Warehouse warehouse) {
+    LOGGER.infof("Replacing warehouse with business unit code '%s'", warehouse.businessUnitCode);
+    warehouseValidator.validate(warehouse, true);
+    warehouseStore.update(warehouse);
+    LOGGER.infof("Warehouse '%s' replaced successfully", warehouse.businessUnitCode);
   }
 }

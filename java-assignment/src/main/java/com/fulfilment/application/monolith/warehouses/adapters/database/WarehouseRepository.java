@@ -4,15 +4,13 @@ import com.fulfilment.application.monolith.warehouses.domain.models.Warehouse;
 import com.fulfilment.application.monolith.warehouses.domain.ports.WarehouseStore;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
+
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class WarehouseRepository implements WarehouseStore, PanacheRepository<DbWarehouse> {
-
-  @Override
-  public List<Warehouse> getAll() {
-    return this.listAll().stream().map(DbWarehouse::toWarehouse).toList();
-  }
 
   @Override
   @jakarta.transaction.Transactional
@@ -22,7 +20,7 @@ public class WarehouseRepository implements WarehouseStore, PanacheRepository<Db
     entity.location = warehouse.location;
     entity.capacity = warehouse.capacity;
     entity.stock = warehouse.stock;
-    entity.createdAt = java.time.LocalDateTime.now();
+    entity.createdAt = LocalDateTime.now();
     this.persist(entity);
   }
 
@@ -31,17 +29,19 @@ public class WarehouseRepository implements WarehouseStore, PanacheRepository<Db
   public void update(Warehouse warehouse) {
     DbWarehouse entity = find("businessUnitCode", warehouse.businessUnitCode).firstResult();
     if (entity != null) {
+      entity.location = warehouse.location;
       entity.capacity = warehouse.capacity;
       entity.stock = warehouse.stock;
-      entity.location = warehouse.location;
-      // potentially update other fields
+      if (warehouse.archivedAt != null) {
+        entity.archivedAt = warehouse.archivedAt;
+      }
     }
   }
 
   @Override
   @jakarta.transaction.Transactional
   public void remove(Warehouse warehouse) {
-    this.delete("businessUnitCode", warehouse.businessUnitCode);
+    delete("businessUnitCode", warehouse.businessUnitCode);
   }
 
   @Override
@@ -51,7 +51,14 @@ public class WarehouseRepository implements WarehouseStore, PanacheRepository<Db
   }
 
   @Override
-  public long countByLocation(String location) {
-    return count("location", location);
+  public long countByLocation(String locationIdentifier) {
+    return count("location", locationIdentifier);
+  }
+
+  @Override
+  public List<Warehouse> getAll() {
+    return listAll().stream()
+        .map(DbWarehouse::toWarehouse)
+        .collect(Collectors.toList());
   }
 }

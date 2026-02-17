@@ -14,7 +14,8 @@ public class Store extends PanacheEntity {
 
   public int quantityProductsInStock;
 
-  public Store() {}
+  public Store() {
+  }
 
   public Store(String name) {
     this.name = name;

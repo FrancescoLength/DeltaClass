@@ -1,115 +1,76 @@
-# Java Code Assignment
+# Warehouse Colocation Management System
 
-This is a short code assignment that explores various aspects of software development, including API implementation, documentation, persistence layer handling, and testing.
+## Overview
 
-## About the assignment
+A simplified Warehouse Colocation Management System built with **Quarkus** and **Java 17**. This application manages the lifecycle of Locations, Stores, Warehouses, and Products, with a focus on domain validation and fulfillment orchestration.
 
-You will find the tasks of this assignment on [CODE_ASSIGNMENT](CODE_ASSIGNMENT.md) file
+## Architecture
 
-## About the code base
+The project follows a **Hexagonal Architecture** (Ports & Adapters) pattern for the Warehouse domain:
 
-This is based on https://github.com/quarkusio/quarkus-quickstarts
-
-### Requirements
-
-To compile and run this demo you will need:
-
-- JDK 17+
-
-In addition, you will need either a PostgreSQL database, or Docker to run one.
-
-### Configuring JDK 17+
-
-Make sure that `JAVA_HOME` environment variables has been set, and that a JDK 17+ `java` command is on the path.
-
-## Building the demo
-
-Execute the Maven build on the root of the project:
-
-```sh
-./mvnw package
+```
+domain/
+├── models/        → Domain entities (Warehouse, Location, Fulfillment)
+├── ports/         → Interfaces defining operations and persistence contracts
+├── usecases/      → Business logic orchestration
+└── validation/    → Business rule enforcement
+adapters/
+├── database/      → JPA/Panache persistence implementations
+└── restapi/       → REST API handlers (JAX-RS)
 ```
 
-## Running the demo
+The **Store** and **Product** modules follow a simpler repository+resource pattern, consistent with the existing codebase structure.
 
-### Live coding with Quarkus
+## Tasks Completed
 
-The Maven Quarkus plugin provides a development mode that supports
-live coding. To try this out:
+| Task | Description | Status |
+|------|-------------|--------|
+| **1. Location** | Implemented `LocationGateway.resolveByIdentifier` | ✅ |
+| **2. Store** | Legacy system updates fire AFTER transaction commit (CDI Events) | ✅ |
+| **3. Warehouse** | Create, Replace, Archive with full business validation | ✅ |
+| **Bonus: Fulfillment** | Product-Warehouse-Store association with 3 constraint checks | ✅ |
 
-```sh
+## Key Design Decisions
+
+- **CDI Events for Store (Task 2)**: Uses `@Observes(during = TransactionPhase.AFTER_SUCCESS)` to ensure legacy system calls happen only after a successful database commit.
+- **Hexagonal Architecture (Task 3)**: The Warehouse module uses Ports & Adapters for clean separation between domain logic and infrastructure.
+- **Contract-First API**: The Warehouse REST API is generated from an OpenAPI specification (`warehouse-openapi.yaml`), ensuring the contract is the single source of truth.
+- **Validation Exception Mapping**: Business validation errors return HTTP 400 (Bad Request) via a global `ValidationExceptionMapper`.
+
+## Running the Application
+
+### Prerequisites
+- Java 17+
+- Maven 3.8+
+- Docker (for PostgreSQL in prod/dev mode)
+
+### Development Mode
+```bash
 ./mvnw quarkus:dev
 ```
 
-In this mode you can make changes to the code and have the changes immediately applied, by just refreshing your browser.
-
-    Hot reload works even when modifying your JPA entities.
-    Try it! Even the database schema will be updated on the fly.
-
-## (Optional) Run Quarkus in JVM mode
-
-When you're done iterating in developer mode, you can run the application as a conventional jar file.
-
-First compile it:
-
-```sh
-./mvnw package
+### Running Tests
+```bash
+./mvnw test
 ```
 
-Next we need to make sure you have a PostgreSQL instance running (Quarkus automatically starts one for dev and test mode). To set up a PostgreSQL database with Docker:
-
-```sh
-docker run -it --rm=true --name quarkus_test -e POSTGRES_USER=quarkus_test -e POSTGRES_PASSWORD=quarkus_test -e POSTGRES_DB=quarkus_test -p 15432:5432 postgres:13.3
+### Code Coverage (JaCoCo)
+```bash
+./mvnw test
+# Report generated at: target/jacoco-report/index.html
 ```
 
-Connection properties for the Agroal datasource are defined in the standard Quarkus configuration file,
-`src/main/resources/application.properties`.
+## Testing Strategy
 
-Then run it:
+- **Unit Tests**: Use Mockito for domain use cases and validators
+- **Integration Tests**: Use `@QuarkusTest` with H2 in-memory database
+- **Coverage**: JaCoCo configured with `quarkus-jacoco` extension
 
-```sh
-java -jar ./target/quarkus-app/quarkus-run.jar
-```
-    Have a look at how fast it boots.
-    Or measure total native memory consumption...
+## Technology Stack
 
-
-## See the demo in your browser
-
-Navigate to:
-
-<http://localhost:8080/index.html>
-
-Have fun, and join the team of contributors!
-
-## Troubleshooting
-
-Using **IntelliJ**, in case the generated code is not recognized and you have compilation failures, you may need to add `target/.../jaxrs` folder as "generated sources".
-
-## Architect's Manifesto (Architecture Decision Records)
-
-This section documents the key architectural decisions made during the implementation of the assessment features.
-
-### 1. Modular Monolith with Hexagonal Principles
-**Decision**: Adopt a Modular Monolith structure with strict separation of concerns, influenced by Hexagonal Architecture (Ports & Adapters).
-**Rationale**: 
-- **Scale**: The application is currently monolithic but requires distinct boundaries for `Location`, `Store`, and `Warehouse` domains to facilitate potential future microservices extraction.
-- **Maintainability**: Decoupling the Domain (Business Logic) from the Infrastructure (Database, REST Adapters) ensures that changes in frameworks or databases do not ripple through the core logic.
-
-### 2. Transactional Availability for Legacy Systems
-**Decision**: Use Quarkus `@Observes(during = TransactionPhase.AFTER_SUCCESS)` for `StoreLegacyUpdateEvent`.
-**Rationale**:
-- **Consistency**: The requirement stated that legacy updates must *only* occur if the database transaction commits.
-- **Decoupling**: Firing an event decouples the `StoreResource` (REST Controller) from the `LegacyStoreManagerGateway` (Infrastructure side-effect). The Resource focuses on the HTTP/DB transaction, while the Event Listener handles the downstream integration safely.
-
-### 3. Strategy Pattern for Validation
-**Decision**: Implement `WarehouseValidator` interface with specific implementations (e.g., `WarehouseBusinessValidator`).
-**Rationale**:
-- **Extensibility (OCP)**: New validation rules (e.g., "Hazmat storage rules") can be added by creating new classes without modifying the core `CreateWarehouseUseCase`.
-- **Testability**: Complex validation logic is isolated in pure Java classes that can be unit-tested without framework overhead.
-
-### 4. Contract-First API Design
-**Decision**: Leverage OpenAPI for the `Warehouse` domain.
-**Rationale**:
-- **Governance**: Defining the API contract (YAML) first ensures that the implementation adheres strictly to the agreed-upon specification.
-- **Stability**: It prevents "implementation drift" where the code and the documentation diverge over time.
+- **Quarkus 3.13.3** — Supersonic Subatomic Java framework
+- **Hibernate ORM Panache** — Simplified JPA persistence
+- **PostgreSQL** (production) / **H2** (testing)
+- **JaCoCo** — Code coverage reporting
+- **RestAssured** — REST API testing
+- **Mockito** — Unit test mocking

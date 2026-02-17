@@ -4,9 +4,12 @@ import com.fulfilment.application.monolith.warehouses.domain.models.Warehouse;
 import com.fulfilment.application.monolith.warehouses.domain.ports.ArchiveWarehouseOperation;
 import com.fulfilment.application.monolith.warehouses.domain.ports.WarehouseStore;
 import jakarta.enterprise.context.ApplicationScoped;
+import org.jboss.logging.Logger;
 
 @ApplicationScoped
 public class ArchiveWarehouseUseCase implements ArchiveWarehouseOperation {
+
+  private static final Logger LOGGER = Logger.getLogger(ArchiveWarehouseUseCase.class);
 
   private final WarehouseStore warehouseStore;
 
@@ -16,7 +19,14 @@ public class ArchiveWarehouseUseCase implements ArchiveWarehouseOperation {
 
   @Override
   public void archive(Warehouse warehouse) {
-    warehouse.archivedAt = java.time.ZonedDateTime.now();
-    warehouseStore.update(warehouse);
+    LOGGER.infof("Archiving warehouse with business unit code '%s'", warehouse.businessUnitCode);
+    Warehouse existing = warehouseStore.findByBusinessUnitCode(warehouse.businessUnitCode);
+    if (existing != null) {
+      existing.archivedAt = java.time.ZonedDateTime.now();
+      warehouseStore.update(existing);
+      LOGGER.infof("Warehouse '%s' archived successfully", warehouse.businessUnitCode);
+    } else {
+      LOGGER.warnf("Warehouse '%s' not found for archiving", warehouse.businessUnitCode);
+    }
   }
 }

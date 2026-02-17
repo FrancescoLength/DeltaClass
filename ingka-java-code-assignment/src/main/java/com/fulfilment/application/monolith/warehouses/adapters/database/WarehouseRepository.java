@@ -5,6 +5,11 @@ import com.fulfilment.application.monolith.warehouses.domain.ports.WarehouseStor
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @ApplicationScoped
 public class WarehouseRepository implements WarehouseStore, PanacheRepository<DbWarehouse> {
 
@@ -16,7 +21,7 @@ public class WarehouseRepository implements WarehouseStore, PanacheRepository<Db
     entity.location = warehouse.location;
     entity.capacity = warehouse.capacity;
     entity.stock = warehouse.stock;
-    entity.createdAt = java.time.LocalDateTime.now();
+    entity.createdAt = LocalDateTime.now();
     this.persist(entity);
   }
 
@@ -28,7 +33,9 @@ public class WarehouseRepository implements WarehouseStore, PanacheRepository<Db
       entity.location = warehouse.location;
       entity.capacity = warehouse.capacity;
       entity.stock = warehouse.stock;
-      // Preserve creation date
+      if (warehouse.archivedAt != null) {
+        entity.archivedAt = warehouse.archivedAt.toLocalDateTime();
+      }
     }
   }
 
@@ -41,38 +48,36 @@ public class WarehouseRepository implements WarehouseStore, PanacheRepository<Db
   @Override
   public Warehouse findByBusinessUnitCode(String buCode) {
     DbWarehouse entity = find("businessUnitCode", buCode).firstResult();
-    if (entity == null) {
-      return null;
-    }
+    return entity != null ? toDomain(entity) : null;
+  }
+
+  @Override
+  public long countByLocation(String locationIdentifier) {
+    return count("location", locationIdentifier);
+  }
+
+  @Override
+  public List<Warehouse> getAll() {
+    return listAll().stream()
+        .map(this::toDomain)
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * Maps a {@link DbWarehouse} JPA entity to a {@link Warehouse} domain model.
+   */
+  private Warehouse toDomain(DbWarehouse entity) {
     Warehouse warehouse = new Warehouse();
     warehouse.businessUnitCode = entity.businessUnitCode;
     warehouse.location = entity.location;
     warehouse.capacity = entity.capacity;
     warehouse.stock = entity.stock;
     if (entity.createdAt != null) {
-      warehouse.creationAt = entity.createdAt.atZone(java.time.ZoneId.systemDefault());
+      warehouse.creationAt = entity.createdAt.atZone(ZoneId.systemDefault());
     }
     if (entity.archivedAt != null) {
-      warehouse.archivedAt = entity.archivedAt.atZone(java.time.ZoneId.systemDefault());
+      warehouse.archivedAt = entity.archivedAt.atZone(ZoneId.systemDefault());
     }
     return warehouse;
-  }
-
-  @Override
-  public java.util.List<Warehouse> getAll() {
-    return listAll().stream().map(entity -> {
-      Warehouse warehouse = new Warehouse();
-      warehouse.businessUnitCode = entity.businessUnitCode;
-      warehouse.location = entity.location;
-      warehouse.capacity = entity.capacity;
-      warehouse.stock = entity.stock;
-      if (entity.createdAt != null) {
-        warehouse.creationAt = entity.createdAt.atZone(java.time.ZoneId.systemDefault());
-      }
-      if (entity.archivedAt != null) {
-        warehouse.archivedAt = entity.archivedAt.atZone(java.time.ZoneId.systemDefault());
-      }
-      return warehouse;
-    }).collect(java.util.stream.Collectors.toList());
   }
 }

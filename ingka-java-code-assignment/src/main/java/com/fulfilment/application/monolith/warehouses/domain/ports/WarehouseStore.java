@@ -11,5 +11,7 @@ public interface WarehouseStore {
 
   Warehouse findByBusinessUnitCode(String buCode);
 
+  long countByLocation(String locationIdentifier);
+
   java.util.List<Warehouse> getAll();
 }

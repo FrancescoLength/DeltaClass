@@ -26,7 +26,8 @@ import org.jboss.logging.Logger;
 @Consumes("application/json")
 public class ProductResource {
 
-  @Inject ProductRepository productRepository;
+  @Inject
+  ProductRepository productRepository;
 
   private static final Logger LOGGER = Logger.getLogger(ProductResource.class.getName());
 
@@ -95,7 +96,8 @@ public class ProductResource {
   @Provider
   public static class ErrorMapper implements ExceptionMapper<Exception> {
 
-    @Inject ObjectMapper objectMapper;
+    @Inject
+    ObjectMapper objectMapper;
 
     @Override
     public Response toResponse(Exception exception) {
@@ -104,6 +106,8 @@ public class ProductResource {
       int code = 500;
       if (exception instanceof WebApplicationException) {
         code = ((WebApplicationException) exception).getResponse().getStatus();
+      } else if (exception instanceof jakarta.validation.ValidationException) {
+        code = 400;
       }
 
       ObjectNode exceptionJson = objectMapper.createObjectNode();
