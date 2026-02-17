@@ -1,78 +1,108 @@
-# Warehouse & Store Fulfillment System - Architectural Implementation
+# Warehouse & Store Fulfillment System (Technical Assessment)
 
 ## Overview
 This repository contains a reference implementation for a **Warehouse Management & Store Fulfillment System**. The primary goal is to demonstrate a robust, scalable architecture capable of handling complex domain rules (capacity, product limits) and legacy system integration without coupling.
 
-The system is built using **Quarkus** and adheres to **Domain-Driven Design (DDD)** principles, structured as a Modular Monolith.
+The system is built using **Quarkus 3.x** and adheres to **Domain-Driven Design (DDD)** principles, structured as a **Modular Monolith**.
 
 ---
 
-## Architectural Decisions
+## 🏗 Architecture & Design Decisions
 
-### 1. Architecture: Modular Monolith
+### 1. Pattern: Modular Monolith with Hexagonal Architecture
 **Context**: The requirement involves distinct but related domains (Warehouse, Store, Fulfillment) with moderate complexity.
-**Decision**: We adopted a **Modular Monolith** approach with strictly enforced package boundaries, utilizing **Hexagonal Architecture (Ports & Adapters)**.
-**Consequences**:
-*   ✅ **Positive**: Low operational complexity (single deployment unit), shared type safety, and ease of refactoring.
-*   ✅ **Positive**: Domain logic is isolated from framework details (Quarkus/Hibernate), making unit testing fast and pure.
-*   ⚠️ **Trade-off**: Deploys as a single unit, but "Context Mapping" ensures modules can be split into Microservices later if scale demands it.
+**Decision**: Adopted a **Modular Monolith** approach with strictly enforced package boundaries. The **Warehouse** module specifically utilizes **Hexagonal Architecture (Ports & Adapters)** to isolate business logic from infrastructure.
 
-### 2. Legacy Integration: CDI Events (Observer Pattern)
+```mermaid
+graph TD
+    subgraph "Primary Adapters (Driving)"
+        REST[REST API / Swagger]
+    end
+    subgraph "Domain Layer (Core)"
+        UC[Use Cases]
+        DM[Domain Models]
+        Val[Validators]
+    end
+    subgraph "Secondary Adapters (Driven)"
+        DB[(PostgreSQL)]
+        Legacy[Legacy Sync System]
+    end
+    REST --> UC
+    UC --> DM
+    UC --> Val
+    UC --> DB
+    UC --> Legacy
+```
+
+### 2. Legacy Integration: Transaction-Aware Events
 **Context**: Store updates must be synchronized to a slow, file-based Legacy System.
-**Decision**: Usage of **CDI Events** with `@Observes(during = TransactionPhase.AFTER_SUCCESS)`.
-**Consequences**:
-*   ✅ **Positive**: **Zero coupling** between the REST API / Domain Transaction and the Legacy System. API response times are unaffected by legacy file I/O.
-*   ✅ **Positive**: **Transactional Integrity**—the event fires *only* if the main DB transaction commits successfully.
-*   ⚠️ **Trade-off**: Asynchronous execution within the same JVM does not guarantee delivery if the application crashes immediately after commit (unlike a persistent message broker like RabbitMQ/Kafka). Given the scope, this infrastructure overhead was deemed unnecessary.
+**Decision**: Used **CDI Events** with `@Observes(during = TransactionPhase.AFTER_SUCCESS)`.
+**Benefit**: Guarantees that the legacy system is only notified if the database transaction commits successfully, preventing data drift between systems without blocking the API response or affecting performance with slow I/O.
 
-### 3. Validation Logic: Strategy Pattern
-**Context**: Warehouses have complex, varying capacity and stock limit rules depending on their type or location.
+### 3. Business Rule Enforcement: Strategy Pattern
+**Context**: Warehouses have varying capacity and stock rules.
 **Decision**: Implemented a `WarehouseValidator` interface using the **Strategy Pattern**.
-**Consequences**:
-*   ✅ **Positive**: adheres to **Open/Closed Principle**. New validation rules can be added without modifying the core `Warehouse` entity or `CreateWarehouseUseCase`.
-*   ✅ **Positive**: Complex "if/else" chains are replaced by polymorphic behavior.
+**Benefit**: Decouples validation logic from the main entity lifecycle and use cases, making the system compliant with the **Open/Closed Principle**.
 
 ---
 
-## Test Strategy
+## ✅ Completed Tasks
 
-Our testing strategy follows the **Test Pyramid**, aiming for high confidence with minimal feedback loops:
-
-*   **Unit Tests (Junit 5 + Mockito)**: Focus on the **Domain Layer**. We verify business invariants (e.g., "Max 3 warehouses per store") without loading the Spring/Quarkus context. Fast execution.
-*   **Integration Tests (`@QuarkusTest`)**: Focus on the **Adapter Layer**. We verify that REST endpoints correctly deserialize JSON and that Repositories correctly map Entities to the Database (H2/PostgreSQL).
-*   **End-to-End / Component Tests**: Verify the full flow, including the CDI Event listeners for legacy sync.
+- **Task 1: Location Resolution** — Implemented identifier-based lookup in `LocationGateway`.
+- **Task 2: Transactional Store Sync** — Decoupled legacy updates via CDI Events to ensure transactional integrity.
+- **Task 3: Warehouse Lifecycle** — Implemented Create, Replace, and Archive use cases with validations for:
+    - Business Unit Code (BUC) Uniqueness.
+    - Location-specific Capacity and Stock limits.
+    - Replacement logic (Stock matching and capacity accommodation).
+- **Bonus: Fulfillment Module** — Orchestrated Product-Warehouse-Store associations with cross-domain constraint checks.
 
 ---
 
-## How to Run
+## 📝 Architectural Reasoning
+Detailed answers regarding Database patterns, API Strategy (Contract-First vs Code-First), and Testing Strategy can be found in the dedicated questions file:
+👉 **[QUESTIONS.md](./ingka-java-code-assignment/QUESTIONS.md)**
+
+---
+
+## 🚀 How to Run
 
 ### Requirements
 *   JDK 17+
 *   Maven 3.8+
-*   Docker (Optional, for database/containerization)
+*   Docker & Docker Compose
 
-### Local Development
+### Local Development (Quarkus Dev Mode)
 ```bash
 cd ingka-java-code-assignment
 ./mvnw clean quarkus:dev
 ```
 
-### Docker Support
-
-**Running with Docker Compose (App + PostgreSQL)**:
+### Running with Docker Compose (Full Stack)
 1.  **Build the application**:
     ```bash
     cd ingka-java-code-assignment
     ./mvnw clean package -DskipTests
     cd ..
     ```
-
 2.  **Start the services**:
     ```bash
     docker-compose up --build -d
     ```
-
 3.  **Access the application**:
     *   API: `http://localhost:8080`
     *   Swagger UI: `http://localhost:8080/q/swagger-ui`
     *   Database: `localhost:15432`
+
+---
+
+## 🧪 Testing Strategy
+Our testing strategy follows the **Test Pyramid**, aiming for high confidence with minimal feedback loops:
+
+*   **Unit Tests (JUnit 5 + Mockito)**: Focus on the **Domain Layer**. Verify business invariants (e.g., `WarehouseBusinessValidator`) without loading the framework context.
+*   **Integration Tests (`@QuarkusTest`)**: Focus on the **Adapter Layer**. Verify REST endpoints, JSON mapping, and Repository interactions with the database (H2).
+*   **Code Coverage**: Reports are generated via **JaCoCo**.
+```bash
+cd ingka-java-code-assignment
+./mvnw test
+# Report: target/jacoco-report/index.html
+```
