@@ -1,103 +1,66 @@
-# Java Architect Assessment - Solution
+# Warehouse & Store Fulfillment System - Architectural Implementation
 
-## Executive Summary
-This repository contains the completed technical assessment for the Java Architect position. The solution prioritizes architectural integrity, scalability, and clean code, leveraging the **Quarkus** framework and **Domain-Driven Design (DDD)** principles.
+## Overview
+This repository contains a reference implementation for a **Warehouse Management & Store Fulfillment System**. The primary goal is to demonstrate a robust, scalable architecture capable of handling complex domain rules (capacity, product limits) and legacy system integration without coupling.
 
-The codebase encompasses two projects:
-*   `ingka-java-code-assignment`: The primary workspace containing the full scope of the assessment.
-*   `java-assignment`: A synced mirror project fulfilling the same requirements.
+The system is built using **Quarkus** and adheres to **Domain-Driven Design (DDD)** principles, structured as a Modular Monolith.
 
 ---
 
-# Part 1: The Plan (How We Started)
+## Architectural Decisions
 
-*Derived from the Initial Architectural Execution Plan*
+### 1. Architecture: Modular Monolith
+**Context**: The requirement involves distinct but related domains (Warehouse, Store, Fulfillment) with moderate complexity.
+**Decision**: We adopted a **Modular Monolith** approach with strictly enforced package boundaries, utilizing **Hexagonal Architecture (Ports & Adapters)**.
+**Consequences**:
+*   ✅ **Positive**: Low operational complexity (single deployment unit), shared type safety, and ease of refactoring.
+*   ✅ **Positive**: Domain logic is isolated from framework details (Quarkus/Hibernate), making unit testing fast and pure.
+*   ⚠️ **Trade-off**: Deploys as a single unit, but "Context Mapping" ensures modules can be split into Microservices later if scale demands it.
 
-## 1. System Design Strategy
+### 2. Legacy Integration: CDI Events (Observer Pattern)
+**Context**: Store updates must be synchronized to a slow, file-based Legacy System.
+**Decision**: Usage of **CDI Events** with `@Observes(during = TransactionPhase.AFTER_SUCCESS)`.
+**Consequences**:
+*   ✅ **Positive**: **Zero coupling** between the REST API / Domain Transaction and the Legacy System. API response times are unaffected by legacy file I/O.
+*   ✅ **Positive**: **Transactional Integrity**—the event fires *only* if the main DB transaction commits successfully.
+*   ⚠️ **Trade-off**: Asynchronous execution within the same JVM does not guarantee delivery if the application crashes immediately after commit (unlike a persistent message broker like RabbitMQ/Kafka). Given the scope, this infrastructure overhead was deemed unnecessary.
 
-### Architectural Pattern: Modular Monolith with Hexagonal Influence
-We treated the existing package structure as a **Modular Monolith** with a strict separation of concerns using **Hexagonal Architecture (Ports & Adapters)**:
-*   **Domain**: Entities, Use Cases, and Port Interfaces (core logic).
-*   **Infrastructure**: Adapters for Database (Repositories) and REST API (Resources).
-*   **API**: DTOs and Resource Controllers.
-
-### Design Patterns & SOLID Principles
-*   **Strategy Pattern**: Used for `Warehouse` validation rules (`WarehouseValidator` interface) to avoid massive `if-else` blocks and adhere to **Open/Closed Principle**.
-*   **Observer / Application Event Pattern**: Used for the **Store Legacy Integration**. To decouple the DB commit from the slow legacy call, we used Quarkus `CDI Events` with `@Observes(during = TransactionPhase.AFTER_SUCCESS)`.
-*   **Single Responsibility (SRP)**: Validation logic extracted from Resources into dedicated Validators.
-
-## 2. Integration & Gap Analysis
-*   **Context**: The assessment required synchronizing legacy Store updates and implementing complex Warehouse state transitions.
-*   **Approach**: We focused on **Project B (`ingka`)** as the master codebase (superset of requirements) and mirrored all architectural improvements to `java-assignment`.
-
-## 3. Execution Roadmap (Summary)
-1.  **Scaffolding**: Setup CI/CD (GitHub Actions), baseline tests, and module design.
-2.  **Core Architecture**: Implement `LocationGateway` and refactor `StoreResource` with CDI Events.
-3.  **Warehouse Domain**: Implement `Create`, `Replace`, `Archive` use cases with proper validation using the Strategy pattern.
-4.  **Documentation**: Write `CASE_STUDY.md` (Architecture decisions) and `QUESTIONS.md`.
-5.  **Polish**: Achieve >80% Test Coverage, fix Lint issues, and ensure strict standard compliance.
+### 3. Validation Logic: Strategy Pattern
+**Context**: Warehouses have complex, varying capacity and stock limit rules depending on their type or location.
+**Decision**: Implemented a `WarehouseValidator` interface using the **Strategy Pattern**.
+**Consequences**:
+*   ✅ **Positive**: adheres to **Open/Closed Principle**. New validation rules can be added without modifying the core `Warehouse` entity or `CreateWarehouseUseCase`.
+*   ✅ **Positive**: Complex "if/else" chains are replaced by polymorphic behavior.
 
 ---
 
-# Part 2: The Execution (How We Ended)
+## Test Strategy
 
-*Derived from the Final Audit Report & Walkthrough*
+Our testing strategy follows the **Test Pyramid**, aiming for high confidence with minimal feedback loops:
 
-## 1. Task Completion Matrix
-
-### Functional Requirements
-| Requirement | Status | Implementation Details |
-|---|---|---|
-| **Location System** | ✅ Complete | `resolveByIdentifier` implemented with stream filters in `LocationGateway`. |
-| **Store Legacy Sync** | ✅ Complete | Decoupled using `StoreLegacyUpdateEvent` + `StoreLegacyUpdateEventListener` (After Transaction). |
-| **Warehouse Logic** | ✅ Complete | `Create`, `Replace`, `Archive` implemented. Business Unit Code, Capacity, and Stock validations strictly enforced. |
-| **Bonus: Fulfillment** | ✅ Complete | Rules implemented: Max 2 warehouses/product/store, Max 3 warehouses/store, Max 5 products/warehouse. |
-
-### Technical Excellence
-| Requirement | Status | Implementation Details |
-|---|---|---|
-| **Test Coverage** | ✅ >80% | **35 Tests per project** (100% Pass Rate). Covers Unit, Integration, and Error paths. |
-| **Code Quality** | ✅ High | `ValidationException` mapped to HTTP 400. Systematic Logging. Clean Naming. |
-| **CI/CD** | ✅ Done | GitHub Actions workflow `.github/workflows/build.yml` running `mvn verify`. |
-| **Documentation** | ✅ Standard | Javadoc on core classes, extensive `README`, `ADR-001` added. |
-
-## 2. Architectural Alignment
-
-### Design Patterns Implemented
-| Pattern | Assessment |
-|---|---|
-| **Hexagonal** | **Excellent**. Warehouse module clearly separates `domain/ports`, `domain/usecases`, and `adapters`. |
-| **Repository** | **Present**. Used across all modules (`WarehouseRepository`, `FulfillmentRepository`, etc.). |
-| **Strategy** | **Good**. `WarehouseValidator` interface allows swapping/extending validation rules easily. |
-| **Observer** | **Elegant**. CDI Events ensure the Legacy System is only called *after* a successful DB commit. |
-
-### SOLID Compliance
-*   **SRP**: Use cases have single responsibilities.
-*   **OCP**: Validators are extensible.
-*   **LSP**: Domain ports are implemented correctly by adapters.
-*   **ISP**: Operation interfaces (`CreateWarehouseOperation`, etc.) are segregated.
-*   **DIP**: High-level policies (Use Cases) depend on abstractions (Ports), not details (Repositories).
-
-## 3. Summary Verdict
-
-| Area | Grade | Notes |
-|---|---|---|
-| **Task Completion** | **A** | All tasks + bonus implemented correctly. |
-| **Architecture** | **A-** | Hexagonal architecture well-executed for Warehouse; Legacy integration handled via Events. |
-| **Testing** | **A-** | **Massive improvement** from baseline. Full suite of 70+ tests across both projects. |
-| **Error Handling** | **A** | Global Exception Handling (`ValidationException` → 400). Structured approach. |
-| **Documentation** | **A** | Complete: README, Javadoc, architectural answers, case study, and ADRs. |
-
-> **Conclusion**: The solution is production-ready, technically sound, and fully compliant with the "Senior/Principal Architect" level requirements.
+*   **Unit Tests (Junit 5 + Mockito)**: Focus on the **Domain Layer**. We verify business invariants (e.g., "Max 3 warehouses per store") without loading the Spring/Quarkus context. Fast execution.
+*   **Integration Tests (`@QuarkusTest`)**: Focus on the **Adapter Layer**. We verify that REST endpoints correctly deserialize JSON and that Repositories correctly map Entities to the Database (H2/PostgreSQL).
+*   **End-to-End / Component Tests**: Verify the full flow, including the CDI Event listeners for legacy sync.
 
 ---
 
-# Docker Support
+## How to Run
 
-## Running Locally with Docker Compose
-You can spin up the entire environment (Application + PostgreSQL) using Docker Compose.
+### Requirements
+*   JDK 17+
+*   Maven 3.8+
+*   Docker (Optional, for database/containerization)
 
-1.  **Build the application** (required first as the Dockerfile copies the jar):
+### Local Development
+```bash
+cd ingka-java-code-assignment
+./mvnw clean quarkus:dev
+```
+
+### Docker Support
+
+**Running with Docker Compose (App + PostgreSQL)**:
+1.  **Build the application**:
     ```bash
     cd ingka-java-code-assignment
     ./mvnw clean package -DskipTests
@@ -113,6 +76,3 @@ You can spin up the entire environment (Application + PostgreSQL) using Docker C
     *   API: `http://localhost:8080`
     *   Swagger UI: `http://localhost:8080/q/swagger-ui`
     *   Database: `localhost:15432`
-
-## GitHub Container Registry
-This project automatically publishes a Docker image to GitHub Packages (GHCR) whenever a new Release is created.
