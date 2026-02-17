@@ -7,6 +7,11 @@ import com.fulfilment.application.monolith.warehouses.domain.validation.Warehous
 import jakarta.enterprise.context.ApplicationScoped;
 import org.jboss.logging.Logger;
 
+/**
+ * Use case for replacing an existing warehouse unit.
+ * Validates that the existing stock can be accommodated by the replacement's
+ * capacity.
+ */
 @ApplicationScoped
 public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
 

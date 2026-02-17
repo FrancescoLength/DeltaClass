@@ -5,6 +5,11 @@ import com.warehouse.api.beans.Warehouse;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
+/**
+ * JAX-RS implementation for the Warehouse resource.
+ * Exposes endpoints for managing the warehouse lifecycle (Create, Read, Update,
+ * Archive).
+ */
 @jakarta.enterprise.context.ApplicationScoped
 public class WarehouseResourceImpl implements WarehouseResource {
 

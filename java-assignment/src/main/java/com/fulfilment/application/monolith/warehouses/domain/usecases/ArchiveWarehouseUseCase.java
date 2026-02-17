@@ -6,6 +6,10 @@ import com.fulfilment.application.monolith.warehouses.domain.ports.WarehouseStor
 import jakarta.enterprise.context.ApplicationScoped;
 import org.jboss.logging.Logger;
 
+/**
+ * Use case for archiving an existing warehouse unit.
+ * Sets the archivedAt timestamp to soft-delete the warehouse unit.
+ */
 @ApplicationScoped
 public class ArchiveWarehouseUseCase implements ArchiveWarehouseOperation {
 

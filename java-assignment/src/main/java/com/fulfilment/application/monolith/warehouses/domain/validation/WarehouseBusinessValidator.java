@@ -8,6 +8,13 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.ValidationException;
 
+/**
+ * Validator for warehouse business rules.
+ * Enforces constraints such as:
+ * - Uniqueness of Business Unit Code (BUC) per location.
+ * - Maximum number of warehouses per location.
+ * - Minimum capacity requirements for existing stock during replacement.
+ */
 @ApplicationScoped
 public class WarehouseBusinessValidator implements WarehouseValidator {
 

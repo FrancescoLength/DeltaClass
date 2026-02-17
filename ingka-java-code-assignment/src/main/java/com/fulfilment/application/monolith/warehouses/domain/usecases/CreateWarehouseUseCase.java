@@ -7,6 +7,10 @@ import com.fulfilment.application.monolith.warehouses.domain.validation.Warehous
 import jakarta.enterprise.context.ApplicationScoped;
 import org.jboss.logging.Logger;
 
+/**
+ * Use case for creating a new warehouse unit.
+ * Coordinates validation and persistence of the new warehouse.
+ */
 @ApplicationScoped
 public class CreateWarehouseUseCase implements CreateWarehouseOperation {
 

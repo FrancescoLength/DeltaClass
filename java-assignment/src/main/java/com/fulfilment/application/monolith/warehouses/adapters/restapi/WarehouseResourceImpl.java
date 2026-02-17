@@ -3,12 +3,17 @@ package com.fulfilment.application.monolith.warehouses.adapters.restapi;
 import com.fulfilment.application.monolith.warehouses.adapters.database.WarehouseRepository;
 import com.warehouse.api.WarehouseResource;
 import com.warehouse.api.beans.Warehouse;
-import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
-@RequestScoped
+/**
+ * JAX-RS implementation for the Warehouse resource.
+ * Exposes endpoints for managing the warehouse lifecycle (Create, Read, Update,
+ * Archive).
+ */
+@ApplicationScoped
 public class WarehouseResourceImpl implements WarehouseResource {
 
   @Inject
