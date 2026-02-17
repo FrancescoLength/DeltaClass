@@ -15,26 +15,43 @@ public class WarehouseRepository implements WarehouseStore, PanacheRepository<Db
   }
 
   @Override
+  @jakarta.transaction.Transactional
   public void create(Warehouse warehouse) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'create'");
+    DbWarehouse entity = new DbWarehouse();
+    entity.businessUnitCode = warehouse.businessUnitCode;
+    entity.location = warehouse.location;
+    entity.capacity = warehouse.capacity;
+    entity.stock = warehouse.stock;
+    entity.createdAt = java.time.LocalDateTime.now();
+    this.persist(entity);
   }
 
   @Override
+  @jakarta.transaction.Transactional
   public void update(Warehouse warehouse) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'replace'");
+    DbWarehouse entity = find("businessUnitCode", warehouse.businessUnitCode).firstResult();
+    if (entity != null) {
+      entity.capacity = warehouse.capacity;
+      entity.stock = warehouse.stock;
+      entity.location = warehouse.location;
+      // potentially update other fields
+    }
   }
 
   @Override
+  @jakarta.transaction.Transactional
   public void remove(Warehouse warehouse) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'remove'");
+    this.delete("businessUnitCode", warehouse.businessUnitCode);
   }
 
   @Override
   public Warehouse findByBusinessUnitCode(String buCode) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'findById'");
+    DbWarehouse entity = find("businessUnitCode", buCode).firstResult();
+    return entity != null ? entity.toWarehouse() : null;
+  }
+
+  @Override
+  public long countByLocation(String location) {
+    return count("location", location);
   }
 }

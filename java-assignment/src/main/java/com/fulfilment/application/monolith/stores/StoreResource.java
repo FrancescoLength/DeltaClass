@@ -27,7 +27,8 @@ import org.jboss.logging.Logger;
 @Consumes("application/json")
 public class StoreResource {
 
-  @Inject LegacyStoreManagerGateway legacyStoreManagerGateway;
+  @Inject
+  jakarta.enterprise.event.Event<StoreLegacyUpdateEvent> legacyStoreUpdateEvent;
 
   private static final Logger LOGGER = Logger.getLogger(StoreResource.class.getName());
 
@@ -55,7 +56,7 @@ public class StoreResource {
 
     store.persist();
 
-    legacyStoreManagerGateway.createStoreOnLegacySystem(store);
+    legacyStoreUpdateEvent.fire(new StoreLegacyUpdateEvent(store, true));
 
     return Response.ok(store).status(201).build();
   }
@@ -77,7 +78,7 @@ public class StoreResource {
     entity.name = updatedStore.name;
     entity.quantityProductsInStock = updatedStore.quantityProductsInStock;
 
-    legacyStoreManagerGateway.updateStoreOnLegacySystem(updatedStore);
+    legacyStoreUpdateEvent.fire(new StoreLegacyUpdateEvent(entity, false));
 
     return entity;
   }
@@ -104,7 +105,7 @@ public class StoreResource {
       entity.quantityProductsInStock = updatedStore.quantityProductsInStock;
     }
 
-    legacyStoreManagerGateway.updateStoreOnLegacySystem(updatedStore);
+    legacyStoreUpdateEvent.fire(new StoreLegacyUpdateEvent(entity, false));
 
     return entity;
   }
@@ -124,7 +125,8 @@ public class StoreResource {
   @Provider
   public static class ErrorMapper implements ExceptionMapper<Exception> {
 
-    @Inject ObjectMapper objectMapper;
+    @Inject
+    ObjectMapper objectMapper;
 
     @Override
     public Response toResponse(Exception exception) {

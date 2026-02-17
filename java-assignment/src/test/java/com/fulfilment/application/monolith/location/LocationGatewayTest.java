@@ -7,12 +7,13 @@ public class LocationGatewayTest {
   @Test
   public void testWhenResolveExistingLocationShouldReturn() {
     // given
-    // LocationGateway locationGateway = new LocationGateway();
+    LocationGateway locationGateway = new LocationGateway();
 
     // when
-    // Location location = locationGateway.resolveByIdentifier("ZWOLLE-001");
+    com.fulfilment.application.monolith.warehouses.domain.models.Location location = locationGateway
+        .resolveByIdentifier("ZWOLLE-001");
 
     // then
-    // assertEquals(location.identification, "ZWOLLE-001");
+    org.junit.jupiter.api.Assertions.assertEquals(location.identification, "ZWOLLE-001");
   }
 }

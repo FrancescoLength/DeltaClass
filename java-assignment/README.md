@@ -85,3 +85,31 @@ Have fun, and join the team of contributors!
 ## Troubleshooting
 
 Using **IntelliJ**, in case the generated code is not recognized and you have compilation failures, you may need to add `target/.../jaxrs` folder as "generated sources".
+
+## Architect's Manifesto (Architecture Decision Records)
+
+This section documents the key architectural decisions made during the implementation of the assessment features.
+
+### 1. Modular Monolith with Hexagonal Principles
+**Decision**: Adopt a Modular Monolith structure with strict separation of concerns, influenced by Hexagonal Architecture (Ports & Adapters).
+**Rationale**: 
+- **Scale**: The application is currently monolithic but requires distinct boundaries for `Location`, `Store`, and `Warehouse` domains to facilitate potential future microservices extraction.
+- **Maintainability**: Decoupling the Domain (Business Logic) from the Infrastructure (Database, REST Adapters) ensures that changes in frameworks or databases do not ripple through the core logic.
+
+### 2. Transactional Availability for Legacy Systems
+**Decision**: Use Quarkus `@Observes(during = TransactionPhase.AFTER_SUCCESS)` for `StoreLegacyUpdateEvent`.
+**Rationale**:
+- **Consistency**: The requirement stated that legacy updates must *only* occur if the database transaction commits.
+- **Decoupling**: Firing an event decouples the `StoreResource` (REST Controller) from the `LegacyStoreManagerGateway` (Infrastructure side-effect). The Resource focuses on the HTTP/DB transaction, while the Event Listener handles the downstream integration safely.
+
+### 3. Strategy Pattern for Validation
+**Decision**: Implement `WarehouseValidator` interface with specific implementations (e.g., `WarehouseBusinessValidator`).
+**Rationale**:
+- **Extensibility (OCP)**: New validation rules (e.g., "Hazmat storage rules") can be added by creating new classes without modifying the core `CreateWarehouseUseCase`.
+- **Testability**: Complex validation logic is isolated in pure Java classes that can be unit-tested without framework overhead.
+
+### 4. Contract-First API Design
+**Decision**: Leverage OpenAPI for the `Warehouse` domain.
+**Rationale**:
+- **Governance**: Defining the API contract (YAML) first ensures that the implementation adheres strictly to the agreed-upon specification.
+- **Stability**: It prevents "implementation drift" where the code and the documentation diverge over time.
