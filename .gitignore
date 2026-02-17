@@ -1,88 +1,62 @@
-# Dependencies
-node_modules/
-npm-debug.log
-yarn-debug.log
-yarn-error.log
-.pnpm-debug.log
-
-# Build outputs
-dist/
-build/
-out/
-.next/
-*.tsbuildinfo
-
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Testing
-coverage/
-
-# IDE specific files
-.idea/
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# OS specific files
-.DS_Store
-Thumbs.db
-
-# Debug logs
-logs/
+# --- Java ---
+*.class
 *.log
+*.ctxt
+.mtj.tmp/
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
 
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Optional REPL history
-.node_repl_history
-
-# dotenv environment variable files
-.env.*
-
-# Stores VSCode versions used for testing VSCode extensions
-.vscode-test
-
-# yarn v2
-.yarn/cache
-.yarn/unplugged
-.yarn/build-state.yml
-.yarn/install-state.gz
-.pnp.*
-
-# Eclipse
-.project
-.classpath
-.settings/
-bin/
-
-# NetBeans
-nb-configuration.xml
-
-# Visual Studio Code
-.vscode
-
-# Vim
-*.swp
-*.swo
-
-# patch
-*.orig
-*.rej
-
-# Maven
+# --- Maven ---
 target/
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
+pom.xml.next
 release.properties
+dependency-reduced-pom.xml
+buildNumber
+
+# --- Quarkus ---
+.quarkus/
+quarkus-app/
+
+# --- IDEs ---
+# IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# VS Code
+.vscode/
+
+# NetBeans
+nb-project/
+nb-configuration.xml
+
+# --- OS ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# --- Node/Frontend (if applicable) ---
+node_modules/
+dist/
+npm-debug.log
+yarn-debug.log
