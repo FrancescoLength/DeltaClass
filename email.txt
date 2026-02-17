@@ -1,0 +1,15 @@
+Casestudy_1 Link
+/media/francesco/Data/Coding/DeltaClass/ingka-java-code-assignment
+
+Casestudy_2 Link
+/media/francesco/Data/Coding/DeltaClass/fcs-interview-code-assignment-main
+
+ 
+Below are the key pointers/focus areas prepared by panel based on the feedback received till now .These are also reviewed /enhanced  by customer. cover these aspects in your submissions:
+1. Implement code changes for all the tasks mentioned in the code assignment MD file(s)
+2. Document unit-testing and write the Junit test cases for positive, negative or error conditions.
+3. Track the source-code coverage using Code coverage tools such as JaCoCo (Expected – 80% or above)
+4. Follow the software development best practices such as Code Quality, Coding Standards, Exception Handling & Logging etc.
+5. Understand the case study scenarios and document the challenges and strategies or solutions for the same
+6. Finally, push changes to your GitHub repository and share the link. Also, you may consider adding CI/CD pipelines and health checks as good-to-have requirements.
+7. AI usage is allowed and encouraged. But evaluation of the code and case study response will also be done in terms of unnecessary or too sparse content (which a unsupervised usage of AI produces).
