@@ -25,15 +25,9 @@ jobs:
           cd ingka-java-code-assignment
           mvn -B clean verify
 
-      - name: Build and Verify (Java Assignment Project)
-        run: |
-          cd java-assignment
-          mvn -B clean verify
-
       - name: Upload JaCoCo Reports
         uses: actions/upload-artifact@v4
         with:
           name: jacoco-reports
           path: |
             ingka-java-code-assignment/target/site/jacoco/
-            java-assignment/target/site/jacoco/
