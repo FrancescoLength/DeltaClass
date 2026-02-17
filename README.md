@@ -89,3 +89,30 @@ We treated the existing package structure as a **Modular Monolith** with a stric
 | **Documentation** | **A** | Complete: README, Javadoc, architectural answers, case study, and ADRs. |
 
 > **Conclusion**: The solution is production-ready, technically sound, and fully compliant with the "Senior/Principal Architect" level requirements.
+
+---
+
+# Docker Support
+
+## Running Locally with Docker Compose
+You can spin up the entire environment (Application + PostgreSQL) using Docker Compose.
+
+1.  **Build the application** (required first as the Dockerfile copies the jar):
+    ```bash
+    cd ingka-java-code-assignment
+    ./mvnw clean package -DskipTests
+    cd ..
+    ```
+
+2.  **Start the services**:
+    ```bash
+    docker-compose up --build -d
+    ```
+
+3.  **Access the application**:
+    *   API: `http://localhost:8080`
+    *   Swagger UI: `http://localhost:8080/q/swagger-ui`
+    *   Database: `localhost:15432`
+
+## GitHub Container Registry
+This project automatically publishes a Docker image to GitHub Packages (GHCR) whenever a new Release is created.

@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:14
+    container_name: warehouse-db
+    environment:
+      POSTGRES_USER: quarkus_test
+      POSTGRES_PASSWORD: quarkus_test
+      POSTGRES_DB: quarkus_test
+    ports:
+      - "15432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - warehouse-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quarkus_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    container_name: warehouse-app
+    build:
+      context: ./ingka-java-code-assignment
+      dockerfile: src/main/docker/Dockerfile.jvm
+    ports:
+      - "8080:8080"
+    environment:
+      # Override the JDBC URL to point to the postgres container instead of localhost
+      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://postgres:5432/quarkus_test
+      QUARKUS_DATASOURCE_USERNAME: quarkus_test
+      QUARKUS_DATASOURCE_PASSWORD: quarkus_test
+      # Ensure Hibernate validates/updates schema in prod mode if needed
+      QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION: update
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - warehouse-net
+
+volumes:
+  postgres_data:
+
+networks:
+  warehouse-net:
